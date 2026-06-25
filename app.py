@@ -21,7 +21,7 @@ HTML_TEMPLATE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VibeCodingEz – Freemium AI Code</title>
     
-    <!-- NHÚNG BIỂU TƯỢNG TÊN LỬA LÀM ẢNH ĐẠI DIỆN WEB (FAVICON) -->
+    <!-- NHÚNG BIỂU TƯỢNG TÊN LỬA LÀM ẢNH ĐẠI DIỆN WEB -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://w3.org viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     
     <script src="https://tailwindcss.com"></script>
@@ -115,20 +115,16 @@ HTML_TEMPLATE = """
 
     <!-- Footer -->
     <footer class="text-center text-[10px] sm:text-xs text-zinc-600 font-mono mt-4">
-        &copy; 2026 VibeCodingEz · Model: openai/gpt-oss-120b:free · Freemium
+        &copy; 2026 VibeCodingEz · Model: openai/gpt-oss-120b · Freemium
     </footer>
 
     <script>
-        // Hàm escape và định dạng code block đơn giản
         function formatReply(text) {
             let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            // Code block ```
             escaped = escaped.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
-                return `<pre class="bg-black/40 rounded-lg p-3 my-2 overflow-x-auto font-mono text-emerald-400"><code>${code.trim()}</code></pre>`;
+                return `<pre class="bg-black/40 rounded-lg p-3 my-2 overflow-x-auto font-mono text-emerald-400"><code class="font-mono">${code.trim()}</code></pre>`;
             });
-            // Inline code
             escaped = escaped.replace(/`([^`]+)`/g, '<code class="bg-zinc-800 text-blue-300 px-1 py-0.5 rounded text-xs font-mono">$1</code>');
-            // Xuống dòng
             escaped = escaped.replace(/\n/g, '<br>');
             return escaped;
         }
@@ -141,7 +137,6 @@ HTML_TEMPLATE = """
             const text = msgInput.value.trim();
             if (!text) return;
 
-            // Thêm tin nhắn người dùng
             chatBox.innerHTML += `
                 <div class="bubble-user p-3 sm:p-4 rounded-2xl max-w-[85%] ml-auto shadow-md">
                     <p class="text-xs text-white/70 font-mono mb-1">You · ${effort.toUpperCase()}</p>
@@ -159,15 +154,15 @@ HTML_TEMPLATE = """
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ prompt: text, effort: effort })
                 });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                if (!res.ok) throw new Error(`HTTP \${res.status}`);
                 const data = await res.json();
 
-                status.add('hidden');
+                status.classList.add('hidden');
                 msgInput.disabled = false;
                 chatBox.innerHTML += `
-                    <div class="bubble-ai p-3 sm:p-4 rounded-2xl max-w-[85%]">
-                        <p class="text-xs text-zinc-500 font-mono mb-1">AI · ${effort.toUpperCase()}</p>
-                        <div class="text-sm text-zinc-200 leading-relaxed">${formatReply(data.reply)}</div>
+                    <div class="bubble-ai p-3 sm:p-4 rounded-2xl max-w-[85%] animate-fade-in">
+                        <p class="text-xs text-zinc-500 font-mono mb-1">AI · \${effort.toUpperCase()}</p>
+                        <div class="text-sm text-zinc-200 leading-relaxed font-sans">\${formatReply(data.reply)}</div>
                     </div>
                 `;
             } catch (e) {
@@ -175,7 +170,7 @@ HTML_TEMPLATE = """
                 msgInput.disabled = false;
                 chatBox.innerHTML += `
                     <div class="glass rounded-xl p-3 border-red-500/30 bg-red-500/5 max-w-[85%]">
-                        <p class="text-xs text-red-400 font-mono">⚠️ Lỗi kết nối hoặc hết hạn mức API.</p>
+                        <p class="text-xs text-red-400 font-mono">⚠️ Lỗi kết nối hoặc hệ thống đang bận.</p>
                     </div>
                 `;
             }
@@ -183,7 +178,6 @@ HTML_TEMPLATE = """
             msgInput.focus();
         }
 
-        // Focus input khi load trang
         window.addEventListener('load', () => document.getElementById('msg').focus());
     </script>
 </body>
@@ -197,7 +191,7 @@ async def get_interface():
 @app.post("/chat")
 async def chat_endpoint(payload: ChatPayload):
     if not OPENROUTER_API_KEY:
-        return {"reply": "[Lỗi]: Chưa cấu hình OPENROUTER_API_KEY hệ thống trên Render."}
+        return {"reply": "[Lỗi]: Chưa cấu hình OPENROUTER_API_KEY hệ thống."}
         
     url = "https://openrouter.ai"
     headers = {
