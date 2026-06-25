@@ -6,14 +6,12 @@ import os
 
 app = FastAPI()
 
-# Lấy API Key từ biến môi trường ẩn trên Render
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 
 class ChatPayload(BaseModel):
     prompt: str
-    effort: str  # 'low', 'medium', 'high'
+    effort: str  # 'low', 'medium', 'high', 'xhigh'
 
-# Dùng raw string r""" để giữ nguyên \w, \n, \s trong JS regex
 HTML_TEMPLATE = r"""
 <!DOCTYPE html>
 <html lang="vi">
@@ -83,9 +81,7 @@ HTML_TEMPLATE = r"""
 
         #msg:focus { outline: none; }
 
-        .quick-btn {
-            transition: all 0.2s;
-        }
+        .quick-btn { transition: all 0.2s; }
         .quick-btn:hover {
             border-color: rgba(99,102,241,0.4);
             color: #c7d2fe;
@@ -95,7 +91,6 @@ HTML_TEMPLATE = r"""
 </head>
 <body class="min-h-screen flex flex-col justify-between p-3 sm:p-4">
 
-    <!-- Header -->
     <header class="max-w-4xl w-full mx-auto glass rounded-2xl p-3 sm:p-4 mb-4 flex items-center justify-between sticky top-3 z-20">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
@@ -111,10 +106,8 @@ HTML_TEMPLATE = r"""
         </span>
     </header>
 
-    <!-- Chat workspace -->
     <main class="flex-1 max-w-4xl w-full mx-auto glass rounded-2xl p-3 sm:p-5 flex flex-col">
         <div id="chat-box" class="flex-1 overflow-y-auto space-y-4 min-h-[420px] sm:min-h-[520px] mb-4 pr-1">
-            <!-- Welcome state -->
             <div id="welcome" class="h-full flex flex-col items-center justify-center text-center gap-4 py-10">
                 <div class="w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center border border-indigo-500/20">
                     <span class="text-3xl">🚀</span>
@@ -132,13 +125,11 @@ HTML_TEMPLATE = r"""
             </div>
         </div>
 
-        <!-- Status loading -->
         <div id="status" class="hidden glass rounded-xl p-3 mb-3 flex items-center gap-3">
             <div class="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
             <span class="text-xs text-zinc-400 font-mono loading-dots">Đang suy luận<span>.</span><span>.</span><span>.</span></span>
         </div>
 
-        <!-- Input bar -->
         <div class="flex flex-col sm:flex-row gap-2 bg-zinc-900/70 p-2 border border-zinc-700/40 rounded-xl focus-within:border-indigo-500/50 transition-all">
             <input type="text" id="msg" placeholder="Nhập câu hỏi hoặc code..." class="flex-1 bg-transparent rounded-lg px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500" onkeypress="if(event.key==='Enter')send()">
             <div class="flex gap-2">
@@ -146,6 +137,7 @@ HTML_TEMPLATE = r"""
                     <option value="low">🟢 Low</option>
                     <option value="medium" selected>🟡 Medium</option>
                     <option value="high">🟠 High</option>
+                    <option value="xhigh">🔴 xHigh</option>
                 </select>
                 <button onclick="send()" id="send-btn" class="bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white font-medium px-5 py-2 rounded-lg text-sm transition-all shadow-lg shadow-indigo-500/20 cursor-pointer">
                     Gửi
@@ -154,17 +146,14 @@ HTML_TEMPLATE = r"""
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="text-center text-[10px] sm:text-xs text-zinc-600 font-mono mt-4">
-        &copy; 2025 VibeCodingEz &middot; DeepSeek Chat (Free) &middot; Powered by OpenRouter
+        &copy; 2025 VibeCodingEz &middot; openai/gpt-oss-120b &middot; Freemium
     </footer>
 
     <script>
-        /* --- Format AI reply: code blocks, inline code, bold, line breaks --- */
         function formatReply(text) {
-            let s = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            var s = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-            // Code blocks với nút copy
             s = s.replace(/```(\w+)?\n([\s\S]*?)```/g, function(_, lang, code) {
                 var label = lang || 'code';
                 var id = 'cb_' + Math.random().toString(36).substr(2, 9);
@@ -177,18 +166,12 @@ HTML_TEMPLATE = r"""
                     + '</div>';
             });
 
-            // Inline code
             s = s.replace(/`([^`]+)`/g, '<code class="bg-zinc-800 text-blue-300 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>');
-
-            // Bold **text**
             s = s.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
-
-            // Newlines
             s = s.replace(/\n/g, '<br>');
             return s;
         }
 
-        /* --- Copy code block --- */
         function copyCode(id) {
             var el = document.getElementById(id);
             if (!el) return;
@@ -203,13 +186,11 @@ HTML_TEMPLATE = r"""
             });
         }
 
-        /* --- Quick send từ nút gợi ý --- */
         function quickSend(text) {
             document.getElementById('msg').value = text;
             send();
         }
 
-        /* --- Gửi tin nhắn --- */
         async function send() {
             var msgInput = document.getElementById('msg');
             var effort = document.getElementById('effort').value;
@@ -220,10 +201,8 @@ HTML_TEMPLATE = r"""
             var text = msgInput.value.trim();
             if (!text) return;
 
-            // Ẩn welcome
             if (welcome) welcome.remove();
 
-            // Thêm bubble user
             var safeText = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
             chatBox.innerHTML += '<div class="bubble-user p-3 sm:p-4 rounded-2xl max-w-[85%] ml-auto shadow-md animate-fade-in">'
                 + '<p class="text-[10px] text-white/60 font-mono mb-1">You &middot; ' + effort.toUpperCase() + '</p>'
@@ -285,52 +264,40 @@ async def get_interface():
 @app.post("/chat")
 async def chat_endpoint(payload: ChatPayload):
     if not OPENROUTER_API_KEY:
-        return {"reply": "[Lỗi] Chưa cấu hình biến môi trường OPENROUTER_API_KEY trên Render."}
+        return {"reply": "[Lỗi] Chưa cấu hình biến môi trường OPENROUTER_API_KEY."}
 
-    # SỬA: URL đúng endpoint của OpenRouter
+    # SỬA 1: URL đúng endpoint
     url = "https://openrouter.ai/api/v1/chat/completions"
 
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://vibecodingez.onrender.com",  # giúp OpenRouter track usage
+        "HTTP-Referer": "https://vibecodingez.onrender.com",
         "X-Title": "VibeCodingEz"
     }
 
-    # System prompt điều chỉnh theo effort level
-    effort_prompts = {
-        "low": "Trả lời cực kỳ ngắn gọn, tối đa 3 câu. Chỉ đưa code nếu được hỏi.",
-        "medium": "Trả lời rõ ràng, vừa đủ. Đưa code kèm giải thích ngắn.",
-        "high": "Trả lời chi tiết, phân tích kỹ. Code có comment đầy đủ, giải thích từng bước."
-    }
-    system_msg = (
-        "Bạn là VibeCodingEz — trợ lý lập trình AI chuyên nghiệp. "
-        f"{effort_prompts.get(payload.effort, effort_prompts['medium'])} "
-        "Luôn dùng Markdown cho code block."
-    )
-
-    # SỬA: Dùng model free thực sự tồn tại trên OpenRouter
+    # Giữ nguyên model của bạn
     data = {
-        "model": "deepseek/deepseek-chat:free",
+        "model": "openai/gpt-oss-120b",
         "messages": [
-            {"role": "system", "content": system_msg},
+            {"role": "system", "content": "Bạn là VibeCodingEz, trợ lý lập trình AI. Trả lời rõ ràng, dùng Markdown cho code block."},
             {"role": "user", "content": payload.prompt}
-        ]
+        ],
+        "provider": {"reasoning_effort": payload.effort}
     }
 
     try:
-        # SỬA: timeout hợp lệ cho httpx
+        # SỬA 2: timeout hợp lệ
         async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
             response = await client.post(url, headers=headers, json=data)
 
             if response.status_code == 200:
                 result = response.json()
-                # SỬA: choices là mảng, phải lấy phần tử [0]
+                # SỬA 3: choices là mảng -> [0]
                 reply = result["choices"][0]["message"]["content"]
                 return {"reply": reply}
             else:
-                error_body = response.text[:300]
-                return {"reply": f"Lỗi từ OpenRouter (HTTP {response.status_code}): {error_body}"}
+                return {"reply": f"Lỗi từ OpenRouter (HTTP {response.status_code}): {response.text[:300]}"}
 
     except httpx.TimeoutException:
         return {"reply": "[Timeout] Model phản hồi quá chậm. Thử lại hoặc giảm effort."}
